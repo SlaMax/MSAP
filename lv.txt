@@ -1,0 +1,86 @@
+import pandas as pd
+from scipy import stats
+from scipy.stats import skew, kurtosis
+import matplotlib.pyplot as plt
+import numpy as np
+
+data=pd.read_csv('/content/sample_data/hormon.csv',sep=';', decimal=',').convert_dtypes()
+
+print(data.head())
+print(data.info())
+print(data.describe())
+
+print(data.isnull().sum())
+data['gastrS']=data['gastrS'].fillna(data['gastrS'].median())
+data['somatS']=data['somatS'].fillna(data['somatS'].median())
+data['somatZ']=data['somatZ'].fillna(data['somatZ'].median())
+print(data.count())
+
+
+
+
+
+
+import seaborn as sns
+print(data['gastrS'].describe())
+print('skew ',data['gastrS'].skew())
+print('kurtosis', data['gastrS'].kurtosis())
+standardna_devijacija=np.std(data['gastrS'],ddof=0)
+print('std:' ,standardna_devijacija)
+
+plt.hist(data['gastrS'])
+plt.ylabel('number of units')
+plt.title('Distribucija varijable gastrS')
+plt.show()
+
+sns.boxplot(x=data['gastrS'])
+plt.title('Boxplot varijable gastrS')
+plt.show()
+
+
+
+
+from scipy.stats import shapiro
+data['gastrS']=data['gastrS'].fillna(data['gastrS'].mean())
+stat, p_value = shapiro(data['gastrS'])
+print(f"Shapiro-Wilk statistika: {stat}, P-vrijednost: {p_value}")
+if p_value>0.05:
+  print('Distribucija je normalna')
+else:
+  print('Distribucija nije normalna')
+
+n=data['gastrS'].count()
+razina_pouzdanosti=0.99
+alfa = 1 - razina_pouzdanosti
+t_vrijednost = stats.t.ppf(1 - alfa / 2, df=n-1) # Kritična vrijednost t-distribucije za zadani stupanj slobode
+# Izračun margine pogreške
+margina_pogreske = t_vrijednost * (standardna_devijacija / np.sqrt(n-1))
+# Interval povjerenja
+srednja_vrijednost=data['gastrS'].mean()
+donja_granica = srednja_vrijednost - margina_pogreske
+gornja_granica = srednja_vrijednost + margina_pogreske
+print(f"99% interval povjerenja: ({donja_granica:.2f},{gornja_granica:.2f})")
+
+
+
+
+
+
+
+import pandas as pd
+from scipy.stats import chi2_contingency
+ct_spol=pd.crosstab(data['pusenje'],data['spol'])
+chi2_stat, p_val_chi2, dof, expected = chi2_contingency(ct_spol)
+print('stat: ',chi2_stat)
+print('P: ',p_val_chi2)
+
+if p_val_chi2<0.05:
+  print('Spol i pusenje su povezane')
+else:
+  print('Spol i pusenje nisu povezane')
+
+ct_spol.plot(kind='bar')
+plt.title('Stupčasti dijagram')
+plt.xlabel('pusenje')
+plt.ylabel('brojcanost')
+plt.show()
